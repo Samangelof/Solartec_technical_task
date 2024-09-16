@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="./images/favicon.png">
+    <link rel="stylesheet" href="./css/styles.css">
+    <title>WhatsApp Interface</title>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Отправить</h1>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="message">Сообщение</button>
+            <button class="tab-button" data-tab="location">Локацию</button>
+            <button class="tab-button" data-tab="media">Медиа файл</button>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="message" class="tab-content active">
+            <form id="message_form">
+                <div class="form-group">
+                    <label for="chatIdMessage">Chat ID:</label>
+                    <input type="text" id="chatIdMessage" name="chatId" required>
+                </div>
+                <div class="form-group">
+                    <label for="messageContent">Сообщение:</label>
+                    <textarea id="messageContent" name="message" rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn">Отправить сообщение</button>
+            </form>
+        </div>
+
+        <!-- Локация -->
+        <div id="location" class="tab-content">
+            <form id="location_form">
+                <div class="form-group">
+                    <label for="chatIdLocation">Chat ID:</label>
+                    <input type="text" id="chatIdLocation" name="chatId" required>
+                </div>
+                <div class="form-group">
+                    <label for="nameLocation">Название местоположения:</label>
+                    <input type="text" id="nameLocation" name="nameLocation" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Адрес:</label>
+                    <input type="text" id="address" name="address" required>
+                </div>
+                <div class="form-group">
+                    <label for="latitude">Широта:</label>
+                    <input type="text" id="latitude" name="latitude" required>
+                </div>
+                <div class="form-group">
+                    <label for="longitude">Долгота:</label>
+                    <input type="text" id="longitude" name="longitude" required>
+                </div>
+                <button type="submit" class="btn">Отправить местоположение</button>
+            </form>
+        </div>
+
+        <!-- Медиа -->
+        <div id="media" class="tab-content">
+            <form id="media_form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="chatIdMedia">Chat ID:</label>
+                    <input type="text" id="chatIdMedia" name="chatId" required>
+                </div>
+                <div class="form-group">
+                    <label for="mediaFile">Файл:</label>
+                    <input type="file" id="mediaFile" name="file" accept="image/*,video/*,audio/*" required>
+                </div>
+                <div class="form-group">
+                    <label for="caption">Описание:</label>
+                    <input type="text" id="caption" name="caption">
+                </div>
+                <button type="submit" class="btn">Отправить файл</button>
+            </form>
+        </div>
+
+
+        <!-- Статус ответа -->
+        <div id="response" class="response"></div>
+    </div>
+
+    <script src="./js/scripts.js"></script>
+</body>
+
+</html>
