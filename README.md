@@ -33,6 +33,9 @@ GREEN_API_URL=https://7103.api.greenapi.com/
 GREEN_API_ID=
 GREEN_API_TOKEN=
 
+AI_URL=https://api.aimlapi.com/v1
+AI_API_KEY=
+
 FLASK_APP="main.py"
 ```
 
