@@ -7,10 +7,11 @@ from .models import Message, Location
 from . import db
 from .services import (
     send_message,
-    get_notifications,
+    get_details_notifications,
+    get_fields_notifications,
     delete_notification,
     send_file,
-    send_location
+    send_location,
 )
 
 # -----------------------------------------------------------------------------------------------------------------------------------
@@ -66,26 +67,31 @@ def send_message_route():
         else:
             logging.error(f"Ошибка при отправке сообщения: {result}")
             return jsonify({"Error": "Данные удалось сохранить в базу данных", "details": result}), 500
-    except Exception as e:
-        logging.error(f"Исключение: {str(e)}")
-        return jsonify({"Error": str(e)}), 500 
+    except Exception as Err:
+        logging.error(f"Исключение: {str(Err)}")
+        return jsonify({"Error": str(Err)}), 500 
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 # получение уведомлений
-@bot.route('/notifications', methods=['GET'])
-def receive_notifications_route():
+@bot.route('/notifications_details', methods=['GET'])
+def receive_notifications_details_route():
     try:
-        notifications = get_notifications()
+        notifications = get_details_notifications()
 
+        if notifications is None:
+            logging.error("Получены некорректные данные: notifications равен None")
+            print('Получены некорректные данные: notifications равен None')
+            return jsonify({"status": "error", "message": "No notifications available"}), 204
+        
         if notifications.get('status') == 'error':
             logging.error(f"Ошибка при получении уведомлений: {notifications.get('message')}")
             return jsonify(notifications), 500
         
         logging.info("Получены уведомления")
         return jsonify(notifications), 200
-    
-    except Exception as e:
-        logging.error(f"Ошибка в receive_notifications_route: {e}")
+
+    except Exception as Err:
+        logging.error(f"Ошибка в receive_notifications_details_route: {Err}")
         return jsonify({"error": "Ошибка при получении уведомлений"}), 500
 
 # -----------------------------------------------------------------------------------------------------------------------------------
@@ -102,9 +108,36 @@ def remove_notification_route(receiptId):
         logging.info(f"Уведомление с id={receiptId} успешно удалено")
         return jsonify(result), 200
     
-    except Exception as e:
-        logging.error(f"Ошибка в remove_notification_route при удалении уведомления с id={receiptId}: {e}")
+    except Exception as Err:
+        logging.error(f"Ошибка в remove_notification_route при удалении уведомления с id={receiptId}: {Err}")
         return jsonify({"error": "Ошибка при удалении уведомления"}), 500
+    
+# -----------------------------------------------------------------------------------------------------------------------------------
+#* [AI] версия
+@bot.route('/notifications', methods=['GET'])
+def receive_notifications_route():
+    try:
+        message_text, chat_id = get_fields_notifications()
+
+        if message_text is None or chat_id is None:
+            logging.error("Ошибка при получении уведомлений")
+            return jsonify({"status": "error", "message": "Unable to fetch notifications"}), 500
+
+        logging.info("Получены уведомления")
+        return jsonify({"message": message_text, "chatId": chat_id}), 200
+
+    except Exception as Err:
+        logging.error(f"Ошибка в receive_notifications_route: {Err}")
+        return jsonify({"error": "Ошибка при получении уведомлений"}), 500
+
+# -----------------------------------------------------------------------------------------------------------------------------------
+#! необязателен к использованию
+#todo: в файле main.py функция process_ai() запускается каждые 3 минуты (20 запросов в час)
+#* [AI] формирование ответа
+# @bot.route('/process', methods=['POST'])
+# def process():
+#     process_ai()
+#     return jsonify({'status': 'success'})
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 # отправить файл

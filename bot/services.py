@@ -1,8 +1,9 @@
 import requests
-from bot.config import green_api_config
 import logging
 import os
 import time
+from bot.config import green_api_config
+from bot.travel import generate_ai_response
 
 
 # -----------------------------------------------------------------------------------------------------------------------------------
@@ -58,7 +59,7 @@ def send_message(chat_id, message):
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 # получить уведомления
-def get_notifications():
+def get_details_notifications():
     config = green_api_config()
     url = f"{config['url']}/waInstance{config['id']}/receiveNotification/{config['token']}"
     headers = {'Content-Type': 'application/json'}
@@ -69,13 +70,39 @@ def get_notifications():
             logging.info('Уведомления успешно получены')
             return response.json()
         else:
-            logging.error('Оишбка при получении уведомлений')
+            logging.error('Ошибка при получении уведомлений')
             return {"status": "error", "message": "Unable to fetch notifications"}
-    except requests.RequestException as err:
-        logging.error(f'[RequestException] в получении уведомлений: {str(err)}')
-        return {"status": "error", "details": str(err)}
+    except requests.RequestException as Err:
+        logging.error(f'[RequestException] в получении уведомлений: {str(Err)}')
+        return {"status": "error", "details": str(Err)}
 
 # -----------------------------------------------------------------------------------------------------------------------------------
+#* [AI] версия
+def get_fields_notifications():
+    config = green_api_config()
+    url = f"{config['url']}/waInstance{config['id']}/receiveNotification/{config['token']}"
+    headers = {'Content-Type': 'application/json'}
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            logging.info('Уведомления успешно получены')
+            data = response.json()
+            chat_id = data.get('body', {}).get('senderData', {}).get('chatId', '')
+            message_text = data.get('body', {}).get('messageData', {}).get('extendedTextMessageData', {}).get('text', '')
+            receipt_id = data.get('receiptId', '')
+
+            logging.error(chat_id, message_text, receipt_id)
+            print(chat_id, message_text)
+            print()
+            print(receipt_id)
+            return message_text, chat_id, receipt_id
+        else:
+            logging.error('Ошибка при получении уведомлений')
+            return None, None, None
+    except requests.RequestException as Err:
+        logging.error(f'[RequestException] при получении уведомлений: {str(Err)}')
+        return None, None, None
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 # удалить уведомление
@@ -99,6 +126,55 @@ def delete_notification(receiptId):
         return {"status": "error", "details": str(err)}
     
 # -----------------------------------------------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------------------------------------------------
+#* [AI] формирование ответа
+def process_ai():
+    message_text, chat_id, receipt_id = get_fields_notifications()
+    if message_text and chat_id:
+        ai_response = generate_ai_response(message_text)
+        if ai_response:
+            send_response(chat_id, ai_response)
+        else:
+            logging.error('Не удалось получить ответ от AI')
+            print('Не удалось получить ответ от AI')
+    else:
+        logging.error('Не удалось получить текст сообщения или идентификатор чата')
+        print('Не удалось получить текст сообщения или идентификатор чата')
+    
+    if receipt_id:
+        delete_notification(receipt_id)
+    else:
+        logging.error('Не удалось получить receiptId для удаления уведомления')
+        print('Не удалось получить receiptId для удаления уведомления')
+
+
+# #* [AI] отправка сформированного ответа
+def send_response(chat_id, response_text):
+    config = green_api_config()
+    url = f"{config['url']}/waInstance{config['id']}/sendMessage/{config['token']}"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "chatId": chat_id,
+        "message": response_text
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code == 200:
+            logging.info('Сообщение успешно отправлено')
+            print('Сообщение успешно отправлено')
+            return response.json()
+
+        else:
+            logging.error(f'Ошибка при отправке сообщения: {response.status_code}')
+            print(f'Ошибка при отправке сообщения: {response.status_code}')
+            return {"status": "error", "message": f"Ошибка: {response.status_code}"}
+    except requests.RequestException as err:
+        logging.error(f'[RequestException] при отправке сообщения: {str(err)}')
+        print(f'[RequestException] при отправке сообщения: {str(err)}')
+        return {"status": "error", "message": str(err)}
+
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 # универсальная функция для отправки файлов (видео, аудио, изображения)
